@@ -1,0 +1,119 @@
+---
+title: "Correlation Between Blood Type and COVID-19"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+_____________________________________________________________________________________
+
+Scientific Question: Is there a correlation between blood type and severity of COVID-19 infection in adults?
+
+Coronavirus disease (COVID-19) is an infectious disease caused by a newly discovered coronavirus. Symptoms vary between individuals, thus it is important to determine what characteristics are correlated with more severe symptoms. One possibility could be blood type, since different antibodies are present in each blood type. The data presented is gathered from a study of 1289 individuals having the given blood type who had at least one recorded test for SARS-CoV-2. These individuals had their blood group documented along with other demographics. To keep the analysis strictly on blood type, the designers of the study ensured that the age, race, and sex were consistent between all 1289 individuals.
+
+_____________________________________________________________________________________
+
+Scientific Hypothesis: If the COVID-19 virus symptoms vary between individuals, then individuals with O type blood are significantly less likely to have severe case of COVID-19. 
+
+We will determine the p-value of the COVID-19 positive individuals, then analyze within each blood type. In these blood type groups, we will look at the number of individuals who tested positive for COVID-19, as well as the amount of those patients who were incubated. We will analyze the number of individuals who tested positive for COVID to determine whether there is a correlation between blood type and contraction of the disease. We will then look at the number incubated to determine if there is correlation between blood type and severity of the disease. 
+
+
+
+_____________________________________________________________________________________
+
+Below, this bit of code is responsible for loading in all of the necessary packages. Here is where I will define the packages and what they are loaded in for 
+
+
+```{r}
+
+install.packages("covid19.analytics")
+library(covid19.analytics)
+
+```
+
+Later in this notebook, we will analyze real life data obtained by The "covid19.analytics" R package. This package allows users to obtain live worldwide data from JHU CCSE repository to introduce other possible risk factors of severe COVID-19 symptoms.
+
+_________________________________________________________________________________
+Below, this code is responsible for loading in an excel file containing data of COVID positive individuals grouped by blood type. We are importing this data to see a general view of our statistics. 
+
+```{r}
+# Load the csv file  
+Project2Data <- read.csv("Project2Data.csv")
+print(Project2Data)
+
+```
+
+This data was obtained from labratory results recorded in NYP/ CUIMC EHR system. This was presented in an article titled, "Associations between blood type and COVID-19 infection, intubation, and death." 
+
+_________________________________________________________________________________
+
+The code below places the data from the csv file into a data frame, to easily access in our p-value and barplot functions. This data frame consists of blood type and their corresponding percents of those intubated. 
+
+```{r}
+# Create a data frame 
+df <- data.frame(c("A","AB","B","O","Rh.Neg","Rh.Pos"), c(2.58,3.04, 3.83, 3.13, 2, 3.16))
+# Add titles
+colnames(df)<- c("BloodType","PercentIntubated")
+print(df)
+```
+
+_________________________________________________________________________________
+
+The code below places the data frame into a barplot so that we can visualize and compare the percentages. 
+
+```{r}
+ # Create a boxplot of percent intubated
+barplot(df$PercentIntubated,
+ # Add titles 
+main = "Percent of Sample Intubated",
+xlab = "Blood type",
+ylab = "%",
+names.arg = c("A", "AB", "B", "O", "Rh.Neg", "Rh.Pos"),
+# Customize the boxplot for preferences
+col = "darkred",
+horiz = FALSE)
+```
+
+It seems that the lowest percentage is Rh.Neg, which already begins to work against my stated hypothesis. It also looks like all of the other percentages are relatively the same. These two statements go against my hypothesis that O is the least likely for severe COVID-19 symptoms. Instead, it actually introduces a new idea that the percent intubated for Rh.Neg may be significantly less than the other blood types. However, we will examine this further in the next section. 
+_________________________________________________________________________________
+
+The statistical method used for my project is P-value. A p-value is a measure of the probability that an observed difference could have occurred just by random chance. We want to use this method to determine if blood type O has a lower percent intubated by chance, or if it is actually due to blood type. In order to find the P-value, we must first find the Z test statistic, which standardizes the data with a normal distribution. Instead of finding the Z-test statistic and having 6 different codes, I created a function titled "bloodtypepvalue" where I directly threaded column 2 of the data frame. 
+
+```{r}
+
+
+bloodtypepvalue<-function(blood_type){
+ # calculate the z-statistic
+z_stat <- (blood_type-mean(df$PercentIntubated)) / (sd(df$PercentIntubated))
+z_stat
+
+# calculate the p-value
+pvalue<-pnorm(z_stat, mean = 0, sd = 1, lower.tail = TRUE) 
+return(pvalue)
+} 
+
+bloodtypepvalue(df$PercentIntubated)
+
+```
+
+
+Analysis of Results: We can see that blood type O has a p-value of 0.61, which is not less than 0.05. A p-value higher than 0.05 is not statistically significant and indicates strong evidence for the null hypothesis. This means we cannot reject the null hypothesis and instead reject the alternative hypothesis. By null hypothesis, I mean that there is no statistical difference between blood type and severity of symptoms, and by alternative hypothesis, I mean that blood type O has significantly less occurrences of severe symptoms. Thus, this specific data works against my scientific hypothesis and proves it incorrect. 
+
+It is also important to note the p-value of Rh.Neg which is 0.06. This is incredibly close, however not less than 0.05. Although, it may suggest that a difference was present, we cannot conclude that this difference is due to blood type. 
+_________________________________________________________________________________
+
+The code below displays another possible reason for high contraction/severity of COVID-19. 
+
+```{r}
+
+# obtain covid19's genomic data
+ covid19.gen.seq <- covid19.genomic.data()
+```
+This function was obtained from the covid.analytics package, and displays the nucleotide proportions of positive COVID-19 individuals. We see here that A and T are noticeably higher than C and G, thus introduces another way we can perform our p-value function to determine significance. 
+
+
+
+
+
